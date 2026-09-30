@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Rastreador orbital · Explorando el Espacio</title>
+<meta name="viewport" content="width=1920, height=1080">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="stage">
+  <!-- CABECERA -->
+  <header id="header">
+    <div id="mode-badge" class="mode-est">
+      <div id="mode-title">TRAYECTORIA ESTIMADA</div>
+      <div id="mode-sub">no oficial</div>
+    </div>
+    <div id="mission">
+      <div id="mission-name">Starship · Vuelo 14</div>
+      <div id="mission-sub">Primer vuelo orbital</div>
+    </div>
+    <div id="phase-box">
+      <div class="lbl">FASE</div>
+      <div id="phase">—</div>
+    </div>
+  </header>
+
+  <!-- MAPA -->
+  <div id="map-wrap">
+    <canvas id="map-base" width="1440" height="720"></canvas>
+    <canvas id="map-track" width="1440" height="720"></canvas>
+    <div id="map-overlay"></div>
+    <div id="vehicle"><div class="pulse"></div><div class="dot"></div><div class="vlabel" id="vlabel">STARSHIP</div></div>
+    <div id="legend">
+      <span><i class="lg-past"></i>Recorrido</span>
+      <span><i class="lg-future"></i>Próximas órbitas</span>
+      <span><i class="lg-hazard"></i>Zona de amerizaje</span>
+      <span><i class="lg-night"></i>Noche</span>
+    </div>
+    <div id="notice" class="hidden"></div>
+  </div>
+
+  <!-- PANEL DE DATOS -->
+  <aside id="panel">
+    <div class="blk met-blk">
+      <div class="lbl">TIEMPO DE MISIÓN</div>
+      <div id="met">T- 00:00:00</div>
+    </div>
+    <div class="blk row2">
+      <div><div class="lbl">HORA UTC</div><div id="utc" class="val">--:--:--</div></div>
+      <div><div class="lbl">FECHA</div><div id="date" class="val sm">--</div></div>
+    </div>
+    <div class="blk row2">
+      <div><div class="lbl">LATITUD</div><div id="lat" class="val">--</div></div>
+      <div><div class="lbl">LONGITUD</div><div id="lon" class="val">--</div></div>
+    </div>
+    <div class="blk">
+      <div class="lbl">ALTITUD</div>
+      <div class="val big"><span id="alt">--</span><span class="unit">km</span></div>
+    </div>
+    <div class="blk">
+      <div class="lbl">VELOCIDAD</div>
+      <div class="val big"><span id="spd-kms">--</span><span class="unit">km/s</span></div>
+      <div class="val sub"><span id="spd-kmh">--</span><span class="unit">km/h</span></div>
+    </div>
+    <div class="blk">
+      <div class="lbl">SOBREVOLANDO</div>
+      <div id="over" class="val md">--</div>
+    </div>
+    <div class="blk row2">
+      <div><div class="lbl">ÓRBITA</div><div id="orbit" class="val">--</div></div>
+      <div><div class="lbl">PERÍODO</div><div id="period" class="val sm">--</div></div>
+    </div>
+    <div class="blk src-blk">
+      <div class="lbl">FUENTE DE DATOS</div>
+      <div id="source" class="src">--</div>
+    </div>
+  </aside>
+
+  <!-- CRONOGRAMA -->
+  <footer id="footer">
+    <div id="timeline"></div>
+    <div id="next-event"><span class="lbl">PRÓXIMO</span> <span id="next-name">—</span> <span id="next-time"></span></div>
+  </footer>
+  <div id="wordmark">EXPLORANDO <b>EL ESPACIO</b></div>
+</div>
+
+<!-- PANEL DE AJUSTES (oculto: tecla S o doble clic en la esquina superior izquierda) -->
+<div id="hotspot" title="Ajustes"></div>
+<div id="settings" class="hidden">
+  <h2>Ajustes del rastreador</h2>
+  <label>Modo
+    <select id="set-mode">
+      <option value="estimated">TRAYECTORIA ESTIMADA (no oficial)</option>
+      <option value="official">DATOS ORBITALES OFICIALES</option>
+    </select>
+  </label>
+  <label>Despegue (UTC, ISO)
+    <input id="set-liftoff" type="text" placeholder="2026-09-28T12:15:00Z">
+  </label>
+  <div class="btns">
+    <button id="btn-now">Despegue = ahora</button>
+    <button id="btn-m1">−1 min</button>
+    <button id="btn-p1">+1 min</button>
+    <button id="btn-p10">+10 min</button>
+  </div>
+  <label>Nombre de la misión <input id="set-name" type="text"></label>
+  <div class="row">
+    <label>Inclinación (°) <input id="set-inc" type="number" step="0.1"></label>
+    <label>Altitud (km) <input id="set-alt" type="number" step="1"></label>
+  </div>
+  <fieldset>
+    <legend>Datos oficiales</legend>
+    <label>TLE (2 o 3 líneas) u OMM JSON/CSV de CelesTrak
+      <textarea id="set-tle" rows="4" spellcheck="false" placeholder="1 xxxxxU ...&#10;2 xxxxx ..."></textarea>
+    </label>
+    <div class="row">
+      <label>NORAD (CATNR) <input id="set-catnr" type="text" placeholder="100900"></label>
+      <label>Designador (INTDES) <input id="set-intdes" type="text" placeholder="2026-230"></label>
+      <label>Nombre <input id="set-objname" type="text" placeholder="STARSHIP"></label>
+    </div>
+    <label class="chk"><input id="set-sup" type="checkbox"> Usar SupGP (suplementario)</label>
+    <div class="btns"><button id="btn-fetch">Descargar ahora</button></div>
+  </fieldset>
+  <div class="btns">
+    <button id="btn-apply" class="primary">Aplicar y guardar</button>
+    <button id="btn-reset">Restablecer (usar config.js)</button>
+    <button id="btn-close">Cerrar</button>
+  </div>
+  <div id="set-status"></div>
+  <p class="hint">Tecla <b>S</b> abre/cierra este panel (en OBS: clic derecho en la fuente → Interactuar).</p>
+</div>
+
+<script src="config.js"></script>
+<script src="js/satellite.min.js"></script>
+<script src="js/orbit-core.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
