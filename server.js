@@ -6,6 +6,9 @@ const { URL } = require('url');
 
 const PORT = Number(process.env.PORT || 3000);
 const ROOT = __dirname;
+const DATA_DIR = process.env.DATA_DIR || '/data';
+const CONFIG_FILE = path.join(DATA_DIR, 'tracker-config.json');
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -28,6 +31,39 @@ function send(res, status, body, type = 'text/plain; charset=utf-8') {
     'X-Content-Type-Options': 'nosniff'
   });
   res.end(body);
+}
+
+function ensureDataDir() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (_) {} }
+function readConfig() { try { return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')); } catch (_) { return {}; } }
+function writeConfig(cfg) { ensureDataDir(); fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2)); }
+function authorized(req) {
+  const supplied = String(req.headers['x-admin-password'] || '');
+  return !!ADMIN_PASSWORD && supplied === ADMIN_PASSWORD;
+}
+function readBody(req, cb) {
+  let body = '';
+  req.on('data', chunk => { body += chunk; if (body.length > 1048576) req.destroy(); });
+  req.on('end', () => cb(body));
+}
+function handleConfig(req, res) {
+  if (req.method === 'GET') return send(res, 200, JSON.stringify({config: readConfig()}), 'application/json; charset=utf-8');
+  if (!authorized(req)) return send(res, 401, JSON.stringify({error:'No autorizado'}), 'application/json; charset=utf-8');
+  if (req.method === 'DELETE') {
+    try { fs.unlinkSync(CONFIG_FILE); } catch (_) {}
+    return send(res, 200, JSON.stringify({ok:true,config:{}}), 'application/json; charset=utf-8');
+  }
+  if (req.method !== 'PUT') return send(res, 405, JSON.stringify({error:'Método no permitido'}), 'application/json; charset=utf-8');
+  readBody(req, body => {
+    try {
+      const payload = JSON.parse(body || '{}');
+      const cfg = payload.config || payload;
+      if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) throw new Error('Configuración inválida');
+      writeConfig(cfg);
+      send(res, 200, JSON.stringify({ok:true,config:cfg}), 'application/json; charset=utf-8');
+    } catch (e) {
+      send(res, 400, JSON.stringify({error:e.message}), 'application/json; charset=utf-8');
+    }
+  });
 }
 
 function proxyCelestrak(req, res, parsed) {
@@ -68,6 +104,7 @@ function proxyCelestrak(req, res, parsed) {
 function serveStatic(req, res, parsed) {
   let pathname = decodeURIComponent(parsed.pathname);
   if (pathname === '/') pathname = '/index.html';
+  if (pathname === '/admin') pathname = '/admin.html';
 
   const requested = path.normalize(path.join(ROOT, pathname));
   if (!requested.startsWith(ROOT)) return send(res, 403, 'Forbidden');
@@ -87,8 +124,10 @@ function serveStatic(req, res, parsed) {
 http.createServer((req, res) => {
   const parsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   if (parsed.pathname === '/health') return send(res, 200, 'ok');
+  if (parsed.pathname === '/api/config') return handleConfig(req, res);
   if (parsed.pathname.startsWith('/api/celestrak/')) return proxyCelestrak(req, res, parsed);
   return serveStatic(req, res, parsed);
 }).listen(PORT, '0.0.0.0', () => {
+  ensureDataDir();
   console.log(`Starship Tracker listening on port ${PORT}`);
 });
