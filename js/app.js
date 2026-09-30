@@ -579,6 +579,14 @@
     // Reloj
     var met = $('met');
     met.textContent = tplus(t); met.classList.toggle('pre', t < 0);
+    // Ajusta automáticamente el reloj para que nunca desborde el panel.
+    met.style.fontSize = '42px';
+    var metMax = met.parentElement ? met.parentElement.clientWidth : 360;
+    var metSize = 42;
+    while (met.scrollWidth > metMax && metSize > 28) {
+      metSize -= 1;
+      met.style.fontSize = metSize + 'px';
+    }
     $('utc').textContent = pad(date.getUTCHours()) + ':' + pad(date.getUTCMinutes()) + ':' + pad(date.getUTCSeconds());
     $('date').textContent = date.getUTCDate() + ' ' + MESES[date.getUTCMonth()] + ' ' + date.getUTCFullYear();
     $('phase').textContent = phaseName(t);
