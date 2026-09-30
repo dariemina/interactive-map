@@ -142,7 +142,7 @@
     this.periodMin = Pmin;
     this.warnings = syn.warnings;
     this.inc = syn.inc;
-    this.name = 'STARSHIP';
+    this.name = cfg.vehicleName || 'CREW DRAGON';
     this.stateAt = function (date) {
       var t = (date - L) / 1000, g;
       if (t < 0) return { lat: cfg.launchSite.lat, lon: cfg.launchSite.lon, alt: 0, speed: 0, t: t, pre: true };
@@ -485,7 +485,7 @@
     var m1 = document.createElement('div'); m1.className = 'mk';
     m1.style.left = X(site.lon) + 'px'; m1.style.top = Y(site.lat) + 'px';
     m1.innerHTML = '<svg width="22" height="22" viewBox="0 0 22 22"><path d="M11 2 L20 19 L2 19 Z" fill="#fff" stroke="#000" stroke-width="1.5"/></svg>' +
-      '<div class="mk-label" style="left:-12px;top:-34px;transform:translateX(-100%);text-align:right">' + escapeHtml(site.name) + '<small>Texas</small></div>';
+      '<div class="mk-label" style="left:-12px;top:-34px;transform:translateX(-100%);text-align:right">' + escapeHtml(site.name) + '<small>' + escapeHtml(site.sub || '') + '</small></div>';
     ov.appendChild(m1);
     var sp = cfg.splashdown;
     if (sp) {
@@ -573,7 +573,7 @@
       lastMode = modeKey;
       $('mode-badge').className = isOff ? 'mode-off' : 'mode-est';
       $('mode-title').textContent = isOff ? 'DATOS ORBITALES OFICIALES' : 'TRAYECTORIA ESTIMADA';
-      $('vlabel').textContent = isOff ? prov.name : 'STARSHIP';
+      $('vlabel').textContent = prov.name || cfg.vehicleName || 'CREW DRAGON';
     }
     $('mode-sub').textContent = isOff ? ('Elementos orbitales reales · ' + prov.name) : 'No oficial · según parámetros anunciados';
     // Reloj
